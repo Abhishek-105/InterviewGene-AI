@@ -8,8 +8,8 @@ app.use(express.json())
 app.use(cookieParser())
 app.use(cors({
     origin:"https://interview-gene-ai-beta.vercel.app",
-    credentials: true
-}))
+    credentials: true,
+}));
 
 /* require all the routes here */
 const authRouter = require("./routes/auth.routes")

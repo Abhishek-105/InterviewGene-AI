@@ -3,8 +3,8 @@ import axios from "axios"
 
 const api = axios.create({
     baseURL: "https://interviewgene-ai-backend.onrender.com",
-    withCredentials: true
-})
+    withCredentials: true,
+});
 
 export async function register({ username, email, password }) {
 
