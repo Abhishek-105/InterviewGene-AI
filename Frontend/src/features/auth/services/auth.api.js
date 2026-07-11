@@ -42,12 +42,12 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // Yahan Provider add kar diya hai
     return (
         <AuthContext.Provider value={{ loading, user, handleRegister, handleLogin }}>
             {children}
         </AuthContext.Provider>
     );
 };
-
 
 export const useAuth = () => useContext(AuthContext);
