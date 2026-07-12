@@ -1,28 +1,38 @@
 import React, { useState, useRef } from 'react'
 import "../style/home.scss"
-import { useInterview } from '../hooks/useInterview' // Path theek kiya (.js hataya aur hooks kiya)
+import { useInterview } from '../hooks/useInterview'
 import { useNavigate } from 'react-router-dom'
 
 const Home = () => {
     const { loading, generateReport, reports } = useInterview()
     const [jobDescription, setJobDescription] = useState("")
     const [selfDescription, setSelfDescription] = useState("")
+    const [resumeFile, setResumeFile] = useState(null) // ✅ Naya state add kiya file store karne ke liye
     const resumeInputRef = useRef()
     const navigate = useNavigate()
 
-    const handleGenerateReport = async () => {
-        const resumeFile = resumeInputRef.current.files[0]
-        const data = await generateReport({ jobDescription, selfDescription, resumeFile })
-        navigate(`/interview/${data._id}`)
+    // File selection handle karne ke liye function
+    const handleFileChange = (e) => {
+        if (e.target.files && e.target.files[0]) {
+            setResumeFile(e.target.files[0])
+        }
     }
 
-    if (loading) {
-        return (
-            <main className='loading-screen'>
-                <h1>Loading your interview plan...</h1>
-            </main>
-        )
-    }
+    const handleGenerateReport = async (e) => {
+        e.preventDefault()
+        try {
+            // Ab resumeFile valid state se pass hoga aur undefined error nahi aayega
+            const report = await generateReport({ jobDescription, selfDescription, resumeFile });
+            
+            if (report && report._id) {
+                navigate(`/report/${report._id}`); 
+            } else {
+                alert("Failed to generate report. Please login again or check your backend.");
+            }
+        } catch (err) {
+            console.error("Error in handleGenerateReport:", err);
+        }
+    };
 
     return (
         <div className='home'>
@@ -69,9 +79,19 @@ const Home = () => {
                                 </div>
                                 <label className='file-upload-area' htmlFor='resume'>
                                     <span className='upload-icon'>📁</span>
-                                    <p className='upload-text'>Click to upload or drag &amp; drop</p>
+                                    <p className='upload-text'>
+                                        {resumeFile ? `Selected: ${resumeFile.name}` : "Click to upload or drag & drop"}
+                                    </p>
                                     <p className='upload-hint'>PDF or DOCX (Max 5MB)</p>
-                                    <input ref={resumeInputRef} hidden type='file' id='resume' name='resume' accept='.pdf,.docx' />
+                                    <input 
+                                        ref={resumeInputRef} 
+                                        hidden 
+                                        type='file' 
+                                        id='resume' 
+                                        name='resume' 
+                                        accept='.pdf,.docx' 
+                                        onChange={handleFileChange} // ✅ File change listener add kiya
+                                    />
                                 </label>
                             </div>
 
@@ -102,8 +122,8 @@ const Home = () => {
                 {/* Bottom Action Button */}
                 <div className='action-section'>
                     <span className='processing-info'>AI-Powered Strategy Generation • Approx 30s</span>
-                    <button onClick={handleGenerateReport} className='primary-button'>
-                        Generate My Interview Strategy
+                    <button onClick={handleGenerateReport} className='primary-button' disabled={loading}>
+                        {loading ? "Generating Strategy..." : "Generate My Interview Strategy"}
                     </button>
                 </div>
 
@@ -134,4 +154,4 @@ const Home = () => {
     )
 }
 
-export default Home  
+export default Home

@@ -15,7 +15,7 @@ authRouter.post("/register", authController.registerUserController)
 /**
  * @route POST /api/auth/login
  * @description login user with email and password
- * @access Public
+ * @access Public    
  */
 authRouter.post("/login", authController.loginUserController)
 
@@ -36,4 +36,4 @@ authRouter.get("/logout", authController.logoutUserController)
 authRouter.get("/get-me", authMiddleware.authUser, authController.getMeController)
 
 
-module.exports = authRouter
+module.exports = authRouter;

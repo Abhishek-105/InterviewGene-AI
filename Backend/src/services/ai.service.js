@@ -87,7 +87,7 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
         model: "gemini-3-flash-preview",
         contents: prompt,
         config: {
-            responseMimeType: "application/js on",
+            responseMimeType: "application/json",
             responseSchema: nativeInterviewReportSchema 
         }
     })
