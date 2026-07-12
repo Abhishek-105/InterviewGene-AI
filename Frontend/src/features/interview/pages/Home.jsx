@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react'
 import "../style/home.scss"
 import { useInterview } from '../hooks/useInterview' // Path theek kiya (.js hataya aur hooks kiya)
-import { useNavigate } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 
 const Home = () => {
     const { loading, generateReport, reports } = useInterview()

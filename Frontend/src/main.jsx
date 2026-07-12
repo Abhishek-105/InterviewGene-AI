@@ -1,10 +1,21 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client' 
-import App from './App.jsx'
-import "./style.scss"
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { RouterProvider } from "react-router-dom";
+import "./style.scss";
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+import { router } from "./app.routes";
+import { AuthProvider } from "./features/auth/auth.context";
+import { InterviewProvider } from "./features/interview/interview.context";
+
+import "./index.css";
+import "./style.scss";
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <AuthProvider>
+      <InterviewProvider>
+        <RouterProvider router={router} />
+      </InterviewProvider>
+    </AuthProvider>
+  </React.StrictMode>
+);
