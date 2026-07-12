@@ -2,8 +2,8 @@ import axios from "axios";
 
 // 1. Custom axios instance with baseURL and credentials enabled
 const api = axios.create({
-  baseURL: "https://interviewgene-ai-backend.onrender.com/api",
-  withCredentials: true, 
+  baseURL: ("https://interviewgene-ai-backend.onrender.com/api"),
+  withCredentials: true,
 });
 
 // 2. Token interceptor for Bearer token authorization
@@ -14,7 +14,7 @@ api.interceptors.request.use((config) => {
   }
   return config;
 }, (error) => {
-  return Promise.reject(error);
+  return Promise.reject(error);s
 });
 
 // 3. API Actions
