@@ -1,10 +1,34 @@
 const { GoogleGenAI } = require("@google/genai")
-const puppeteer = require("puppeteer")
+const puppeteer = require("puppeteer-core")
+const chromium = require("@sparticuz/chromium")
 
 const ai = new GoogleGenAI({
     apiKey: process.env.GOOGLE_GENAI_API_KEY
 })
 
+// Retry wrapper — Gemini ke transient 503 "overloaded" errors ke liye
+async function callGeminiWithRetry(callFn, retries = 3, baseDelay = 2000) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            return await callFn()
+        } catch (err) {
+            const isOverloaded =
+                err?.status === 503 ||
+                err?.message?.includes("UNAVAILABLE") ||
+                err?.message?.includes("high demand")
+
+            const isLastAttempt = attempt === retries
+
+            if (isOverloaded && !isLastAttempt) {
+                const delay = baseDelay * attempt // 2s, 4s, 6s
+                console.log(`Gemini overloaded (attempt ${attempt}/${retries}), retrying in ${delay}ms...`)
+                await new Promise((resolve) => setTimeout(resolve, delay))
+                continue
+            }
+            throw err
+        }
+    }
+}
 
 const nativeInterviewReportSchema = {
     type: "OBJECT",
@@ -83,20 +107,27 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
                         Job Description: ${jobDescription}
                     `
 
-    const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
-        config: {
-            responseMimeType: "application/json",
-            responseSchema: nativeInterviewReportSchema 
-        }
-    })
+    const response = await callGeminiWithRetry(() =>
+        ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: nativeInterviewReportSchema 
+            }
+        })
+    )
 
     return JSON.parse(response.text)
 }
 
 async function generatePdfFromHtml(htmlContent) {
-    const browser = await puppeteer.launch()
+    const browser = await puppeteer.launch({
+        args: chromium.args,
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath(),
+        headless: chromium.headless,
+    })
     const page = await browser.newPage()
     await page.setContent(htmlContent, { waitUntil: "networkidle0" })
 
@@ -123,20 +154,22 @@ async function generateResumePdf({ resume, selfDescription, jobDescription }) {
                         The resume should not be so lengthy, it should ideally be 1-2 pages long when converted to PDF. Focus on quality rather than quantity and make sure to include all the relevant information that can increase the candidate's chances of getting an interview call for the given job description.
                     `
 
-    const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
-        config: {
-            responseMimeType: "application/json",
-            responseSchema: {
-                type: "OBJECT",
-                properties: {
-                    html: { type: "STRING", description: "The HTML content of the resume" }
-                },
-                required: ["html"]
+    const response = await callGeminiWithRetry(() =>
+        ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: "OBJECT",
+                    properties: {
+                        html: { type: "STRING", description: "The HTML content of the resume" }
+                    },
+                    required: ["html"]
+                }
             }
-        }
-    })
+        })
+    )
 
     const jsonContent = JSON.parse(response.text)
     const pdfBuffer = await generatePdfFromHtml(jsonContent.html)
