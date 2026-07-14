@@ -1,6 +1,9 @@
 const { GoogleGenAI } = require("@google/genai")
 const puppeteer = require("puppeteer-core")
-const chromium = require("@sparticuz/chromium")
+// NOTE: @sparticuz/chromium (v121+) is a pure ESM package. Using top-level
+// require() breaks it — chromium.executablePath ends up undefined because
+// the whole module gets wrapped inside a `.default` property.
+// Fix: dynamically import() it inside the function instead.
 
 const ai = new GoogleGenAI({
     apiKey: process.env.GOOGLE_GENAI_API_KEY
@@ -33,13 +36,13 @@ async function callGeminiWithRetry(callFn, retries = 3, baseDelay = 2000) {
 const nativeInterviewReportSchema = {
     type: "OBJECT",
     properties: {
-        matchScore: { 
-            type: "NUMBER", 
-            description: "A score between 0 and 100 indicating how well the candidate's profile matches the job description" 
+        matchScore: {
+            type: "NUMBER",
+            description: "A score between 0 and 100 indicating how well the candidate's profile matches the job description"
         },
-        title: { 
-            type: "STRING", 
-            description: "The title of the job for which the interview report is generated" 
+        title: {
+            type: "STRING",
+            description: "The title of the job for which the interview report is generated"
         },
         technicalQuestions: {
             type: "ARRAY",
@@ -87,10 +90,10 @@ const nativeInterviewReportSchema = {
                 properties: {
                     day: { type: "INTEGER", description: "The day number in the preparation plan, starting from 1" },
                     focus: { type: "STRING", description: "The main focus of this day in the preparation plan" },
-                    tasks: { 
-                        type: "ARRAY", 
+                    tasks: {
+                        type: "ARRAY",
                         items: { type: "STRING" },
-                        description: "List of tasks to be done on this day" 
+                        description: "List of tasks to be done on this day"
                     }
                 },
                 required: ["day", "focus", "tasks"]
@@ -113,7 +116,7 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
-                responseSchema: nativeInterviewReportSchema 
+                responseSchema: nativeInterviewReportSchema
             }
         })
     )
@@ -122,6 +125,10 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
 }
 
 async function generatePdfFromHtml(htmlContent) {
+    // FIX: dynamic import() instead of require() — @sparticuz/chromium is ESM-only.
+    const chromiumModule = await import("@sparticuz/chromium")
+    const chromium = chromiumModule.default || chromiumModule
+
     const browser = await puppeteer.launch({
         args: chromium.args,
         defaultViewport: chromium.defaultViewport,
@@ -132,7 +139,7 @@ async function generatePdfFromHtml(htmlContent) {
     await page.setContent(htmlContent, { waitUntil: "networkidle0" })
 
     const pdfBuffer = await page.pdf({
-        format: "A4", 
+        format: "A4",
         margin: { top: "20mm", bottom: "20mm", left: "15mm", right: "15mm" }
     })
 
