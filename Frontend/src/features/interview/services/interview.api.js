@@ -26,7 +26,9 @@ export const generateInterviewReport = async ({ jobDescription, selfDescription,
     formData.append("resume", resumeFile); // matches backend's upload.single("resume")
 
     requestData = formData;
-    headers["Content-Type"] = "multipart/form-data";
+    // NOTE: Content-Type header manually set NAHI karna FormData ke saath —
+    // Axios/browser khud "multipart/form-data; boundary=..." set karta hai.
+    // Manually set karne se boundary miss ho jaata hai aur backend parsing fail hoti hai.
   } else {
     requestData = { jobDescription, selfDescription };
     headers["Content-Type"] = "application/json";
